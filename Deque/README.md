@@ -97,7 +97,7 @@ It is YOUR responsibility to ensure the correct number of arguments are given. T
 
 * Implement fixed argument count as part of `Deque` creation, and support it throughout. Requires its own push functions (without the Ex). Should probably have been the default. API breaking changes permitted for this.
 
-## License
+## MIT License
 
 Copyright (c) 2026 Tor Valamo
 
