@@ -1,8 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
+// #include <stdbool.h>
 
 typedef struct DequeData {
     void *data;
