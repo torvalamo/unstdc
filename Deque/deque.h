@@ -14,15 +14,14 @@ typedef struct Deque {
     size_t size;
     size_t headIdx;
     size_t tailIdx;
-    // size_t args; // @todo Enforce argument count for all elements.
+    size_t args;
 } Deque;
 
-// struct DequeCreateOpts {
-//     size_t initialCapacity;
-//     bool preventResize; // @todo Option to prevent automatic resizing of the deque.
-//     size_t elementArgs;
-//     // Add more options here as needed.
-// };
+typedef struct DequeCreateOpts {
+    size_t initialCapacity;
+    // bool preventResize; // @todo Option to prevent automatic resizing of the deque.
+    size_t elementArgs;
+} DequeCreateOpts;
 
 /** 
  * Creates a new deque with the specified initial capacity.
@@ -33,10 +32,10 @@ typedef struct Deque {
  * @warning If memory allocation fails, the Deque has capacity 0, and will grow by powers of 2 
  *          rather than by the `initialCapacity`.
  */
-Deque Deque_Create(size_t initialCapacity);
+//Deque Deque_Create(size_t initialCapacity);
 
-// Deque Deque_Create_Opts(struct DequeCreateOpts opts);
-// #define Deque_Create(...) Deque_Create_Opts((DequeCreateOpts){__VA_ARGS__})
+Deque Deque_Create_Opts(DequeCreateOpts opts);
+#define Deque_Create(...) Deque_Create_Opts((DequeCreateOpts){__VA_ARGS__})
 
 /**
  * Flushes the deque, applying the specified flush function to each element.
@@ -61,6 +60,29 @@ void Deque_Flush(Deque *deque, void (*flushFunction)(DequeData *));
 void Deque_Free(Deque *deque, void (*flushFunction)(DequeData *));
 
 /**
+ * Pushes an element with a set of arguments to the back of the deque. 
+ * The number of arguments must match the `elementArgs` specified during deque creation.
+ *
+ * @param deque The deque to push the element to.
+ * @param ... The arguments for the element, each as a void pointer.
+ *
+ * @return The new size of the deque after the push operation, or 0 if new memory allocation failed.
+ */
+size_t Deque_PushBack(Deque *deque, ...);
+
+/**
+ * Pushes an element with a set of arguments to the front of the deque.
+ * The number of arguments must match the `elementArgs` specified during deque creation.
+ *
+ * @param deque The deque to push the element to.
+ * @param ... The arguments for the element, each as a void pointer.
+ * @param ... The arguments for the element, each as a void pointer.
+ *
+ * @return The new size of the deque after the push operation, or 0 if new memory allocation failed.
+ */
+size_t Deque_PushFront(Deque *deque, ...);
+
+/**
  * Pushes an element with one or more arguments to the back of the deque.
  *
  * @param deque The deque to push the element to.
@@ -69,7 +91,7 @@ void Deque_Free(Deque *deque, void (*flushFunction)(DequeData *));
  *
  * @return The new size of the deque after the push operation, or 0 if new memory allocation failed.
  */
-size_t Deque_PushBack(Deque *deque, size_t args, ...);
+size_t Deque_PushBackEx(Deque *deque, size_t args, ...);
 
 /**
  * Pushes an element with one or more arguments to the front of the deque.
@@ -80,7 +102,7 @@ size_t Deque_PushBack(Deque *deque, size_t args, ...);
  *
  * @return The new size of the deque after the push operation, or 0 if new memory allocation failed.
  */
-size_t Deque_PushFront(Deque *deque, size_t args, ...);
+size_t Deque_PushFrontEx(Deque *deque, size_t args, ...);
 
 /**
  * Pops an element from the back of the deque, retrieving its arguments.

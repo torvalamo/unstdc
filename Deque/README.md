@@ -8,14 +8,20 @@ You may only pass pointers as entries. Which means you will also be responsible 
 
 ## API reference
 
-### Deque Deque_Create(size_t initialCapacity)
+### Deque Deque_Create_Opts(DequeCreateOpts opts)
+### Deque Deque_Create([.initialCapacity = 0], [.elementArgs = 0])
 
-Returns a `Deque` with the given initial capacity. You never change anything on the `Deque` struct manually (in that case you probably invalidate something and your program will crash). The deque will double its capacity each time it is full.
+A macro for `Deque_Create_Opts` that allows this style of declarative options.
 
-Opts (not implemented yet, do not use the argument):
-* `.fixed = (int)` - Ensure each element has the same number of arguments. 
+Returns a new `Deque` set up with any given set of opts. You never change anything on the `Deque` struct manually (in that case you probably invalidate something and your program will crash). 
 
-Because this deque only accepts pointers, we do not allow you to clear it without handling the contents with the following functions.
+The deque will double its capacity each time it is full.
+
+**Opts**:
+* `.initialCapacity = (int)` - Initial memory capacity. Default 0.
+* `.elementArgs = (int)` - Ensure each element has the same number of arguments. Default 0 = variatic arguments allowed.
+
+Because the deque only accepts pointers, we do not allow you to clear it without handling the contents with the following functions.
 
 ### void Deque_Flush(Deque *deque, void (*flushFunction)(DequeData *))
 
@@ -58,11 +64,13 @@ Deque_Flush(&deque, my_flush_func);
 
 Does the same as `Deque_Flush`, except it also frees all data memory for the Deque itself, leaving it at size 0. It will then expand dynamically by powers of two as it grows.
 
+### size_t Deque_PushBack(Deque *deque, ...) / size_t Deque_PushFront(Deque *deque, ...)
+
+Insert an element with the expected number of elements at the back or front of the deque. The expected number of elements is the given `.elementArgs` in struct creation options. If it was not set, this function returns 0.
+
 ### size_t Deque_PushBackEx(Deque *deque, size_t args, ...) / size_t Deque_PushFrontEx(Deque *deque, size_t args, ...)
 
-Insert an element with `args` number of arguments at the back or front of the deque.
-
-> **Dev note**: These functions are postfixed with "Ex" (expanded/extended?) because functions without the `args` argument might be implemented later, where the argument count is implied based on the `Deque` creation options.
+Insert an element with `args` number of arguments at the back or front of the deque. If `args` is 0 or if `.elementArgs` is set and is not identical to `args`, the function will return 0.
 
 ```c
 Deque_PushBackEx(&deque, 1, &something);
@@ -95,7 +103,7 @@ It is YOUR responsibility to ensure the correct number of arguments are given. T
 
 ## TODO list
 
-* Implement fixed argument count as part of `Deque` creation, and support it throughout. Requires its own push functions (without the Ex). Should probably have been the default. API breaking changes permitted for this.
+Nothing yet.
 
 ## MIT License
 
