@@ -66,11 +66,11 @@ Does the same as `Deque_Flush`, except it also frees all data memory for the Deq
 
 ### size_t Deque_PushBack(Deque *deque, ...) / size_t Deque_PushFront(Deque *deque, ...)
 
-Insert an element with the expected number of elements at the back or front of the deque. The expected number of elements is the given `.elementArgs` in struct creation options. If it was not set, this function returns 0.
+Insert an element with the expected number of elements at the back or front of the deque. The expected number of elements is the given `.elementArgs` in struct creation options. If it was not set, this function does nothing and returns 0.
 
 ### size_t Deque_PushBackEx(Deque *deque, size_t args, ...) / size_t Deque_PushFrontEx(Deque *deque, size_t args, ...)
 
-Insert an element with `args` number of arguments at the back or front of the deque. If `args` is 0 or if `.elementArgs` is set and is not identical to `args`, the function will return 0.
+Insert an element with `args` number of arguments at the back or front of the deque. If `args` is 0 or if `.elementArgs` is set and is not identical to `args`, this function does nothing and will return 0.
 
 ```c
 Deque_PushBackEx(&deque, 1, &something);
