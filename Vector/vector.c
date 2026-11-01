@@ -8,7 +8,7 @@ Vector Vector_Create_Opts(size_t typeSize, VectorCreateOpts opts) {
     size_t initialCapacity = opts.initialCapacity;
     void *data = initialCapacity ? malloc(initialCapacity * typeSize) : NULL;
     Vector vector = {
-        .capacity = data ? initialCapacity : 1,
+        .capacity = data ? initialCapacity : 0,
         .typeSize = typeSize,
         .size = 0,
         .data = data
