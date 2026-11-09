@@ -1,8 +1,20 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-typedef struct Arena Arena;
+typedef struct __Arena_ArenaChunk {
+    uint8_t *buffer;
+    size_t capacity;
+    size_t offset;
+    struct __Arena_ArenaChunk *next;
+} __Arena_ArenaChunk;
+
+typedef struct Arena {
+    __Arena_ArenaChunk *head;
+    __Arena_ArenaChunk *tail;
+} Arena;
 
 /**
  * Initializes a new arena.
@@ -46,7 +58,17 @@ void Arena_Reset(Arena *self);
 char *Arena_CopyString(Arena *self, const char *str);
 
 /**
- * Allocates memory for a single instance of a type from the arena.
+ * Copies raw data into the arena.
+ *
+ * @param self The arena to allocate from.
+ * @param data The data to copy.
+ * @param size The size of the data to copy.
+ * @return A pointer to the copied data, or NULL on failure.
+ */
+void *Arena_CopyData(Arena *self, const void *data, size_t size);
+
+/**
+ * Utility macro to allocate memory for a single instance of a type from the arena.
  *
  * @param arena The arena to allocate from.
  * @param type The type of the memory to allocate.
@@ -55,7 +77,7 @@ char *Arena_CopyString(Arena *self, const char *str);
 #define ARENA_ALLOC(arena, type) ((type *)Arena_Allocate((arena), sizeof(type)))
 
 /**
- * Allocates memory for an array of instances of a type from the arena.
+ * Utility macro to allocate memory for an array of instances of a type from the arena.
  *
  * @param arena The arena to allocate from.
  * @param type The type of the memory to allocate.
@@ -65,7 +87,7 @@ char *Arena_CopyString(Arena *self, const char *str);
 #define ARENA_ALLOC_ARRAY(arena, type, count) ((type *)Arena_Allocate((arena), sizeof(type) * (count)))
 
 /**
- * Allocates memory for a string from the arena.
+ * Utility macro to allocate memory for a string from the arena.
  *
  * @param arena The arena to allocate from.
  * @param str The string to allocate memory for.

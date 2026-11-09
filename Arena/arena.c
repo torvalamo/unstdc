@@ -68,20 +68,8 @@ static size_t GetNearestBlockSize(size_t value) {
     return (((value - 1) >> GetSystemPageBitShift()) + 1) * GetSystemPageSize();
 }
 
-struct ArenaChunk {
-    uint8_t *buffer;
-    size_t capacity;
-    size_t offset;
-    struct ArenaChunk *next;
-};
-
-struct Arena {
-    struct ArenaChunk *head;
-    struct ArenaChunk *tail;
-};
-
-static struct ArenaChunk *ArenaChunk_Initialize(size_t capacity) {
-    struct ArenaChunk *chunk = (struct ArenaChunk *)malloc(sizeof(struct ArenaChunk));
+static __Arena_ArenaChunk *ArenaChunk_Initialize(size_t capacity) {
+    __Arena_ArenaChunk *chunk = (__Arena_ArenaChunk *)malloc(sizeof(__Arena_ArenaChunk));
     if (!chunk) return NULL;
 
     size_t rounded_capacity = GetNearestBlockSize(capacity);
@@ -96,7 +84,7 @@ static struct ArenaChunk *ArenaChunk_Initialize(size_t capacity) {
     return chunk;
 }
 
-static void ArenaChunk_Destroy(struct ArenaChunk *self) {
+static void ArenaChunk_Destroy(__Arena_ArenaChunk *self) {
     if (self) {
         if (self->buffer) {
             free(self->buffer);
@@ -107,7 +95,7 @@ static void ArenaChunk_Destroy(struct ArenaChunk *self) {
 }
 
 Arena *Arena_Initialize() {
-    struct ArenaChunk *head = ArenaChunk_Initialize(0);
+    __Arena_ArenaChunk *head = ArenaChunk_Initialize(0);
     if (!head) return NULL;
     Arena *arena = (Arena *)malloc(sizeof(Arena));
     if (!arena) {
@@ -121,9 +109,9 @@ Arena *Arena_Initialize() {
 
 void Arena_Destroy(Arena *self) {
     if (self) {
-        struct ArenaChunk *curr = self->head;
+        __Arena_ArenaChunk *curr = self->head;
         while (curr) {
-            struct ArenaChunk *next = curr->next;
+            __Arena_ArenaChunk *next = curr->next;
             ArenaChunk_Destroy(curr);
             curr = next;
         }
@@ -136,14 +124,14 @@ void *Arena_Allocate(Arena *self, size_t size) {
 
     size_t aligned_size = (size + 7) & ~7;
 
-    struct ArenaChunk *chunk = self->tail;
+    __Arena_ArenaChunk *chunk = self->tail;
     if (chunk->offset + aligned_size <= chunk->capacity) {
         void *memory = chunk->buffer + chunk->offset;
         chunk->offset += aligned_size;
         return memory;
     }
 
-    struct ArenaChunk *new_chunk = ArenaChunk_Initialize(aligned_size);
+    __Arena_ArenaChunk *new_chunk = ArenaChunk_Initialize(aligned_size);
     if (!new_chunk) return NULL;
 
     self->tail->next = new_chunk;
@@ -156,9 +144,9 @@ void *Arena_Allocate(Arena *self, size_t size) {
 
 void Arena_Reset(Arena *self) {
     if (self) {
-        struct ArenaChunk *chunk = self->head->next;
+        __Arena_ArenaChunk *chunk = self->head->next;
         while (chunk) {
-            struct ArenaChunk *next = chunk->next;
+            __Arena_ArenaChunk *next = chunk->next;
             ArenaChunk_Destroy(chunk);
             chunk = next;
         }
@@ -175,6 +163,16 @@ char *Arena_CopyString(Arena *self, const char *str) {
     if (!copy) return NULL;
     memcpy(copy, str, strlen(str));
     copy[strlen(str)] = '\0';
+
+    return copy;
+}
+
+void *Arena_CopyData(Arena *self, const void *data, size_t size) {
+    if (!self || !data || size == 0) return NULL;
+
+    void *copy = Arena_Allocate(self, size);
+    if (!copy) return NULL;
+    memcpy(copy, data, size);
 
     return copy;
 }

@@ -30,6 +30,12 @@ Copies a string into the arena.
 
 Returns a pointer to the copied string, or NULL on failure.
 
+### char *Arena_CopyData(Arena *self, const void *data, size_t size)
+
+Copies a block of data into the arena. 
+
+Returns a pointer to the copied data, or NULL on failure.
+
 ## Macros
 
 ### ARENA_ALLOC(arena, type)
