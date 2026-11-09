@@ -16,7 +16,7 @@ Arena *Arena_InitializeWithCapacity(size_t capacity);
 /**
  * Initializes a new arena.
  *
- * @return The initialized arena.
+ * @return The initialized arena, or NULL on failure.
  */
 Arena *Arena_Initialize(void);
 
