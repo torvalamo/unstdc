@@ -3,6 +3,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct Arena Arena;
 
 /**
@@ -178,3 +181,7 @@ size_t Arena_GetCapacity(const Arena *self);
  * @return The user-available capacity of the arena.
  */
 size_t Arena_GetUserCapacity(const Arena *self);
+
+#ifdef __cplusplus
+}
+#endif
