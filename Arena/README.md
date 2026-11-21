@@ -4,7 +4,9 @@ C implementation of memory arenas with varied features.
 
 There are also a few metrics functions. See the header file for a list.
 
-> **TIP:** When a function returns `NULL` or `false` that normally shouldn't, you can check the error message with `char const* Arena_Error()`.
+> **Error reporting:** When a function returns `NULL` or `false` that normally shouldn't, you can check the error message with `char const* Arena_Error()`. The error reporting is unique per thread, but not unique per arena. All arenas in one thread use the same error bucket.
+
+> **A note on thread safety:** Arenas are not safe to use across threads. However, keeping an arena within a single thread (or explicitly passing ownership yourself), is safe.
 
 ## Flags reference
 
