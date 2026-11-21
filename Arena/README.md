@@ -1,4 +1,4 @@
-# arena - memory arena
+# Arena - The ULTIMATE Memory Arena
 
 C implementation of memory arenas with varied features.
 
