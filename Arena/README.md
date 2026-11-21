@@ -82,6 +82,8 @@ Reclaims memory in strict LIFO (Last-In, First-Out) order without needing extern
 * **`Arena_Pop()`:** Rolls back the most recently allocated block (or slot, if combined with `ARENA_LAYOUT_POOLED`). On dynamic heap arenas, completely emptied overflow chunks are freed immediately.
 * **`Arena_Free()`:** Validates that `ptr` is the current top item of the stack before popping it; passing an out-of-order pointer returns `false` and sets an error.
 
+> **Tip for using Arena_Free() or Arena_Pop() with stack:** Use `Arena_Free()` when you want to absolutely ensure that you know which item is at the top of the stack. Use `Arena_Pop()` when that does not matter.
+
 ## Code examples
 
 ```c
