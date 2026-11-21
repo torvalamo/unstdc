@@ -2,10 +2,10 @@
 
 C implementation of memory arenas with varied features.
 
-Backing: Can allocate on heap (default), in virtual memory, or using a parent arena (parent must be virtual).
-Growth: Can be dynamic (default) or finite size.
-Layout: Can provide heterogenous/linear allocation (default) or pooled/fixed-size allocation.
-Lifetime: Can free in bulk (default), reuse slots (only pooled arenas) or push/pop on a LIFO stack
+- Backing: Can allocate on heap (default), in virtual memory, or using a parent arena (parent must be virtual).
+- Growth: Can be dynamic (default) or finite size.
+- Layout: Can provide heterogenous/linear allocation (default) or pooled/fixed-size allocation.
+- Lifetime: Can free in bulk (default), reuse slots (only pooled arenas) or push/pop on a LIFO stack
 
 ## API reference
 
