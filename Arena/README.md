@@ -1,10 +1,15 @@
 # arena - memory arena
 
-C implementation of an automatically expanding memory arena.
+C implementation of memory arenas with varied features.
+
+Backing: Can allocate on heap (default), in virtual memory, or using a parent arena (parent must be virtual).
+Growth: Can be dynamic (default) or finite size.
+Layout: Can provide heterogenous/linear allocation (default) or pooled/fixed-size allocation.
+Lifetime: Can free in bulk (default), reuse slots (only pooled arenas) or push/pop on a LIFO stack
 
 ## API reference
 
-[arena.h](arena.h) documents everything.
+[arena.h](arena.h) documents everything for now.
 
 ## TODO list
 
