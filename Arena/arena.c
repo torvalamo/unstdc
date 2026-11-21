@@ -227,6 +227,26 @@ ARENA_API void* Arena_Allocate(Arena* self, size_t size) {
         return memory;
     }
 
+    // Reuse any recycled chunks attached after tail (e.g., CHILD arenas after Arena_Reset or Arena_Pop)
+    while (tail->next != NULL) {
+        Chunk* candidate = tail->next;
+        if (alloc_size <= candidate->capacity - candidate->offset) {
+            self->tail = candidate;
+
+            size_t prev_offset = candidate->offset;
+            void* memory = candidate->buffer + prev_offset;
+            candidate->offset += alloc_size;
+
+            if (ARENA_IS_LINEAR(self->flags) && ARENA_IS_STACK(self->flags)) {
+                stack_header_t* footer = (stack_header_t*)(candidate->buffer + candidate->offset - STACK_HEADER_SIZE);
+                *footer = prev_offset;
+            }
+            return memory;
+        }
+        tail = candidate;
+        self->tail = candidate;
+    }
+
     // Tail is full: fail if FIXED or VIRTUAL, otherwise allocate a new chunk
     if (ARENA_IS_FIXED(self->flags) || ARENA_IS_VIRTUAL(self->flags)) {
         lastError = "Arena has reached maximum capacity.";
@@ -353,8 +373,10 @@ ARENA_API bool Arena_Pop(Arena* self) {
         }
         if (!prev) return true;
 
-        Chunk_Destroy(tail, self->flags);
-        prev->next = NULL;
+        if (!ARENA_IS_CHILD(self->flags)) {
+            Chunk_Destroy(tail, self->flags);
+            prev->next = NULL;
+        }
         self->tail = prev;
         tail = prev;
         base_offset = Chunk_BaseOffset(self, tail);
@@ -377,15 +399,17 @@ ARENA_API bool Arena_Pop(Arena* self) {
         }
     }
 
-    // If the pop completely emptied a non-head chunk, clean it up so tail always points to active data
+    // If the pop completely emptied a non-head chunk, step tail back (and free if HEAP)
     if (tail != self->head && tail->offset <= base_offset) {
         Chunk* prev = self->head;
         while (prev && prev->next != tail) {
             prev = prev->next;
         }
         if (prev) {
-            Chunk_Destroy(tail, self->flags);
-            prev->next = NULL;
+            if (!ARENA_IS_CHILD(self->flags)) {
+                Chunk_Destroy(tail, self->flags);
+                prev->next = NULL;
+            }
             self->tail = prev;
         }
     }
@@ -406,6 +430,12 @@ ARENA_API void Arena_Reset(Arena* self) {
             VMem_Decommit(self->head->buffer + initial_commit, self->committed - initial_commit);
             self->committed = initial_commit;
         }
+    } else if (ARENA_IS_CHILD(self->flags)) {
+        Chunk* current = self->head->next;
+        while (current) {
+            current->offset = STRUCT_CHUNK_SIZE;
+            current = current->next;
+        }
     } else {
         Chunk* current = self->head->next;
         while (current) {
@@ -419,6 +449,7 @@ ARENA_API void Arena_Reset(Arena* self) {
     self->head->offset = STRUCT_CHUNK_SIZE + STRUCT_ARENA_SIZE;
     self->tail = self->head;
 }
+
 
 ARENA_API char* Arena_CopyString(Arena* self, const char* str) {
     if (!self || !str) {

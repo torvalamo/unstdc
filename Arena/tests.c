@@ -254,6 +254,74 @@ static void Test_VirtualMasterAndNestedSubArenas(void) {
     Arena_Destroy(vmem);
 }
 
+// 7. Dynamic Child Arena Chunk Recycling on Reset & Pop
+static void Test_ChildChunkRecyclingOnReset(void) {
+    Arena* parent = Arena_Initialize(ARENA_BACKING_VIRTUAL, 16 * 1024 * 1024);
+    assert(parent != NULL);
+
+    // Create a dynamic linear child arena with a small initial capacity
+    Arena* child = Arena_InitializeWithParent(parent, ARENA_GROWTH_DYNAMIC, 64);
+    assert(child != NULL);
+
+    // Allocate enough data to force the child to carve multiple chunks from parent
+    for (int i = 0; i < 4000; i++) {
+        int* val = ARENA_ALLOC(child, int);
+        assert(val != NULL);
+        *val = i;
+    }
+
+    size_t parent_used_after_spike = Arena_GetUserUsed(parent);
+    size_t child_cap_after_spike   = Arena_GetCapacity(child);
+    assert(parent_used_after_spike > 0);
+    assert(child_cap_after_spike > 16384);
+
+    // Reset the child multiple times and re-allocate the same spike workload
+    for (int frame = 0; frame < 5; frame++) {
+        Arena_Reset(child);
+        assert(Arena_GetUserUsed(child) == 0);
+        // Child keeps its carved chunks attached for reuse
+        assert(Arena_GetCapacity(child) == child_cap_after_spike);
+
+        for (int i = 0; i < 4000; i++) {
+            int* val = ARENA_ALLOC(child, int);
+            assert(val != NULL);
+            *val = i + frame;
+        }
+
+        // Parent usage must NOT grow at all across frame resets
+        assert(Arena_GetUserUsed(parent) == parent_used_after_spike);
+    }
+
+    // Also verify dynamic child stack pop/push recycles overflow chunks cleanly
+    Arena* child_stack = Arena_InitializeWithParent(
+        parent,
+        ARENA_GROWTH_DYNAMIC | ARENA_LIFETIME_STACK,
+        64
+    );
+    assert(child_stack != NULL);
+
+    for (int i = 0; i < 2000; i++) {
+        assert(Arena_Allocate(child_stack, 32) != NULL);
+    }
+    size_t parent_used_with_stack = Arena_GetUserUsed(parent);
+
+    // Pop everything back to empty, then push again
+    for (int i = 0; i < 2000; i++) {
+        assert(Arena_Pop(child_stack) == true);
+    }
+    assert(Arena_GetUserUsed(child_stack) == 0);
+
+    for (int i = 0; i < 2000; i++) {
+        assert(Arena_Allocate(child_stack, 32) != NULL);
+    }
+    // Parent usage remains unchanged because the popped overflow chunks were reused
+    assert(Arena_GetUserUsed(parent) == parent_used_with_stack);
+
+    Arena_Destroy(child_stack);
+    Arena_Destroy(child);
+    Arena_Destroy(parent);
+}
+
 int main(void) {
     RUN_TEST(Test_HeapDynamicLinearBulk);
     RUN_TEST(Test_HeapFixedLinearBulk);
@@ -261,6 +329,7 @@ int main(void) {
     RUN_TEST(Test_LinearHeterogeneousStack);
     RUN_TEST(Test_PooledHomogeneousVectorStack);
     RUN_TEST(Test_VirtualMasterAndNestedSubArenas);
+    RUN_TEST(Test_ChildChunkRecyclingOnReset);
 
     printf("\nAll arena tests passed!\n");
     return 0;
