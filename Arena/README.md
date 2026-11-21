@@ -4,45 +4,45 @@ C implementation of memory arenas with varied features.
 
 There are also a few metrics functions. See the header file for a list.
 
+> **TIP:** When a function returns `NULL` or `false` that normally shouldn't, you can check the error message with `char const* Arena_Error()`.
+
 ## Flags reference
 
 You can combine most of these flags (one per type, obviously).
-
-> **TIP:** When something returns `NULL` that normally shouldn't, you can check the error message with `char const* Arena_Error()`.
 
 ### ARENA_BACKING_HEAP (default)
 
 Allocates memory blocks on the C heap (`malloc`) rounded up to the nearest OS page multiple (e.g., 4 KB on x86_64, 16 KB on Apple Silicon).
 
-**Arena_Initialize()**: The arena stores its own control headers at the beginning of this initial chunk.
+* **Arena_Initialize()**: The arena stores its own control headers at the beginning of this initial chunk.
 
-**Arena_Allocate()**: Serves allocations from the active tail chunk. If the tail chunk does not have enough remaining space, then either allocate a new chunk (default) or return NULL and an error (if ARENA_GROWTH_FIXED).
+* **Arena_Allocate()**: Serves allocations from the active tail chunk. If the tail chunk does not have enough remaining space, then either allocate a new chunk (default) or return NULL and an error (if ARENA_GROWTH_FIXED).
 
-**Arena_Reset()**: Frees any excess dynamic chunks and returns to the initial state of the first chunk.
+* **Arena_Reset()**: Frees any excess dynamic chunks and returns to the initial state of the first chunk.
 
-**Arena_Destroy()**: Frees everything related to the arena, including the arena itself.
+* **Arena_Destroy()**: Frees everything related to the arena, including the arena itself.
 
 ### ARENA_BACKING_VIRTUAL
 
 Sets aside a contiguous range of virtual addresses rounded up to the OS page size (e.g., 4 KB on x86_64, 16 KB on Apple Silicon).
 
-**Arena_Initialize()**: It is normal to reserve a massive range that your app might use, e.g. several GB if necessary. The arena itself has some overhead, so the minimum actual use is 1 OS page size, then it commits physical pages within that reserved range as needed.
+* **Arena_Initialize()**: It is normal to reserve a massive range that your app might use, e.g. several GB if necessary. The arena itself has some overhead, so the minimum actual use is 1 OS page size, then it commits physical pages within that reserved range as needed.
 
 > **Note for 32-bit systems:** The maximum virtual memory for 32-bit systems is about 2 GB. For 64-bit systems it is in the terabytes.
 
-**Arena_Allocate()**: Commits more of the virtual memory range to physical RAM pages, as the need grows.
+* **Arena_Allocate()**: Commits more of the virtual memory range to physical RAM pages, as the need grows.
 
-**Arena_Free() and Arena_Pop()**: In a virtual arena, popping and freeing pooled or stacked resources, resulting in "empty" tailing pages, will not decommit them. The only way to actually free physical memory in a virtual arena is to reset or destroy.
+* **Arena_Free() and Arena_Pop()**: In a virtual arena, popping and freeing pooled or stacked resources, resulting in "empty" tailing pages, will not decommit them. The only way to actually free physical memory in a virtual arena is to reset or destroy.
 
-**Arena_Reset()**: Keeps the reserved virtual memory range intact, resets the offset to its initial state, and decommits excess physical pages back to the OS.
+* **Arena_Reset()**: Keeps the reserved virtual memory range intact, resets the offset to its initial state, and decommits excess physical pages back to the OS.
 
-**Arena_Destroy()**: Unmaps the entire virtual address range and frees all remaining physical pages.
+* **Arena_Destroy()**: Unmaps the entire virtual address range and frees all remaining physical pages.
 
 ### Parent Arena Backing (`parent != NULL`)
 
 Passing a `parent` arena to `Arena_InitializeWithParent*` carves the child arena's memory directly out of the parent instead of calling `malloc` or reserving OS virtual memory. Cannot be combined with `ARENA_BACKING_VIRTUAL`.
 
-**Arena_Reset()**: Resets the child back to its initial chunk while keeping any already-carved overflow chunks attached for zero-overhead reuse on future allocations, avoiding repeated allocations from `parent`.
+* **Arena_Reset()**: Resets the child back to its initial chunk while keeping any already-carved overflow chunks attached for zero-overhead reuse on future allocations, avoiding repeated allocations from `parent`.
 
 ### ARENA_GROWTH_DYNAMIC (default)
 
@@ -85,7 +85,7 @@ Reclaims memory in strict LIFO (Last-In, First-Out) order without needing extern
 ## Code examples
 
 ```c
-Arena* virtualArena = Arena_Initialize(ARENA_BACKING_VIRTUAL, 1024*1024*1024); // Reserve 1 GB
+Arena* virtualArena = Arena_Initialize(ARENA_BACKING_VIRTUAL, 1024ULL*1024*1024); // Reserve 1 GB
 MyData* data = Arena_Allocate(virtualArena, sizeof(MyData));
 Arena* childArena = Arena_InitializeWithParentAndSlotSize(virtualArena, ARENA_GROWTH_FIXED | ARENA_LAYOUT_POOLED, 64, sizeof(float)); // sizeof(float) is 4, but it's aligned to 16
 float* a = Arena_Allocate(childArena, sizeof(float));
